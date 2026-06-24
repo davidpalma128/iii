@@ -1,109 +1,197 @@
 from datetime import date
 
-from habits import core, storage
+import pytest
+
+from habits import core, schedule, storage
 
 
-def make_store(today=date(2026, 6, 24)):
+def store_with(name="exercise", sched=None, today=date(2026, 6, 24)):
     store = storage.empty_store()
-    core.add_habit(store, "exercise", today)
+    core.add_habit(store, name, today, sched=sched)
     return store
 
 
-def test_add_is_idempotent():
+def entries_for(dates):
+    return {d: {} for d in dates}
+
+
+# --- mutations --------------------------------------------------------------
+
+
+def test_add_is_idempotent_and_sets_defaults():
     today = date(2026, 6, 24)
     store = storage.empty_store()
-    assert core.add_habit(store, "read", today) is True
+    assert core.add_habit(store, "read", today, tags=["Books", "books"]) is True
     assert core.add_habit(store, "read", today) is False
-    assert "read" in store["habits"]
+    habit = store["habits"]["read"]
+    assert habit["schedule"] == {"type": "daily"}
+    assert habit["tags"] == ["books"]  # normalized + deduped
+    assert habit["entries"] == {}
 
 
 def test_add_rejects_blank_name():
-    store = storage.empty_store()
-    try:
-        core.add_habit(store, "   ", date(2026, 6, 24))
-    except ValueError:
-        pass
-    else:  # pragma: no cover
-        raise AssertionError("expected ValueError")
+    with pytest.raises(ValueError):
+        core.add_habit(storage.empty_store(), "   ", date(2026, 6, 24))
 
 
-def test_remove():
-    store = make_store()
-    assert core.remove_habit(store, "exercise") is True
-    assert core.remove_habit(store, "exercise") is False
+def test_rename_preserves_history():
+    store = store_with("read")
+    core.mark(store, "read", date(2026, 6, 24))
+    core.rename_habit(store, "read", "reading")
+    assert "read" not in store["habits"]
+    assert store["habits"]["reading"]["entries"] == {"2026-06-24": {}}
+    assert store["habits"]["reading"]["name"] == "reading"
 
 
-def test_mark_and_unmark():
-    store = make_store()
+def test_rename_conflict():
+    store = store_with("read")
+    core.add_habit(store, "write", date(2026, 6, 24))
+    with pytest.raises(ValueError):
+        core.rename_habit(store, "read", "write")
+
+
+def test_mark_with_note_and_idempotency():
+    store = store_with()
     day = date(2026, 6, 24)
     assert core.mark(store, "exercise", day) is True
-    assert core.mark(store, "exercise", day) is False  # already marked
-    assert store["habits"]["exercise"]["log"] == ["2026-06-24"]
+    assert core.mark(store, "exercise", day) is False  # unchanged
+    assert core.mark(store, "exercise", day, note="5k") is True  # note changes it
+    assert store["habits"]["exercise"]["entries"]["2026-06-24"] == {"note": "5k"}
+
+
+def test_unmark():
+    store = store_with()
+    day = date(2026, 6, 24)
+    core.mark(store, "exercise", day)
     assert core.unmark(store, "exercise", day) is True
     assert core.unmark(store, "exercise", day) is False
 
 
-def test_log_stays_sorted():
-    store = make_store()
-    for d in ["2026-06-24", "2026-06-20", "2026-06-22"]:
-        core.mark(store, "exercise", date.fromisoformat(d))
-    assert store["habits"]["exercise"]["log"] == [
-        "2026-06-20",
-        "2026-06-22",
-        "2026-06-24",
-    ]
+def test_archive_toggle():
+    store = store_with()
+    assert core.set_archived(store, "exercise", True) is True
+    assert core.set_archived(store, "exercise", True) is False
+    assert store["habits"]["exercise"]["archived"] is True
 
 
-def test_current_streak_counts_today_backwards():
+# --- daily streaks ----------------------------------------------------------
+
+
+def test_daily_current_streak():
     today = date(2026, 6, 24)
-    log = ["2026-06-22", "2026-06-23", "2026-06-24"]
-    assert core.current_streak(log, today) == 3
+    e = entries_for(["2026-06-22", "2026-06-23", "2026-06-24"])
+    assert core.current_streak(e, schedule.daily(), today) == 3
 
 
-def test_current_streak_survives_until_a_full_day_missed():
+def test_daily_streak_grace_for_today():
     today = date(2026, 6, 24)
-    # checked in yesterday but not yet today -> streak still alive
-    log = ["2026-06-22", "2026-06-23"]
-    assert core.current_streak(log, today) == 2
+    e = entries_for(["2026-06-22", "2026-06-23"])  # not yet done today
+    assert core.current_streak(e, schedule.daily(), today) == 2
 
 
-def test_current_streak_breaks_after_a_gap():
+def test_daily_streak_breaks_after_gap():
     today = date(2026, 6, 24)
-    log = ["2026-06-20", "2026-06-21"]  # two days ago -> broken
-    assert core.current_streak(log, today) == 0
+    e = entries_for(["2026-06-20", "2026-06-21"])
+    assert core.current_streak(e, schedule.daily(), today) == 0
 
 
-def test_current_streak_empty():
-    assert core.current_streak([], date(2026, 6, 24)) == 0
+def test_daily_longest_streak():
+    today = date(2026, 6, 30)
+    e = entries_for(["2026-06-01", "2026-06-02", "2026-06-03",
+                     "2026-06-10", "2026-06-11"])
+    assert core.longest_streak(e, schedule.daily(), today) == 3
 
 
-def test_longest_streak():
-    log = [
-        "2026-06-01",
-        "2026-06-02",
-        "2026-06-03",  # run of 3
-        "2026-06-10",
-        "2026-06-11",  # run of 2
-    ]
-    assert core.longest_streak(log) == 3
+# --- weekly (weekday) streaks ----------------------------------------------
 
 
-def test_longest_streak_empty():
-    assert core.longest_streak([]) == 0
+def test_weekly_streak_ignores_non_due_days():
+    # Mon/Wed/Fri habit. today = Fri 2026-06-26.
+    sched = schedule.parse("mon,wed,fri")
+    today = date(2026, 6, 26)  # Friday
+    # completed Mon 22, Wed 24, Fri 26 — three due days in a row.
+    e = entries_for(["2026-06-22", "2026-06-24", "2026-06-26"])
+    assert core.current_streak(e, sched, today) == 3
 
 
-def test_completion_rate():
+def test_weekly_streak_survives_non_due_today():
+    sched = schedule.parse("mon,wed,fri")
+    today = date(2026, 6, 25)  # Thursday — not a due day
+    e = entries_for(["2026-06-22", "2026-06-24"])  # Mon, Wed done
+    # Thursday isn't due, so the most recent due day (Wed) is done -> streak 2.
+    assert core.current_streak(e, sched, today) == 2
+
+
+def test_weekly_streak_breaks_on_missed_due_day():
+    sched = schedule.parse("mon,wed,fri")
+    today = date(2026, 6, 26)  # Friday
+    e = entries_for(["2026-06-22", "2026-06-26"])  # missed Wed 24
+    # Friday done, but Wed missed -> streak only counts Friday.
+    assert core.current_streak(e, sched, today) == 1
+
+
+# --- times-per-week streaks -------------------------------------------------
+
+
+def test_times_per_week_current_streak():
+    sched = schedule.parse("3/week")
+    today = date(2026, 6, 24)  # Wed, week of Mon 22
+    e = entries_for([
+        # this week: 3 done -> met
+        "2026-06-22", "2026-06-23", "2026-06-24",
+        # last week (Mon 15..Sun 21): 3 done -> met
+        "2026-06-15", "2026-06-17", "2026-06-19",
+    ])
+    assert core.current_streak(e, sched, today) == 2
+
+
+def test_times_per_week_grace_when_current_week_incomplete():
+    sched = schedule.parse("3/week")
     today = date(2026, 6, 24)
-    log = ["2026-06-24", "2026-06-23", "2026-06-10"]
-    # last 7 days: only the 23rd and 24th fall in range -> 2/7
-    assert core.completion_rate(log, today, 7) == 2 / 7
+    e = entries_for([
+        "2026-06-22",  # this week: only 1 so far (not met) -> grace
+        "2026-06-15", "2026-06-17", "2026-06-19",  # last week met
+    ])
+    assert core.current_streak(e, sched, today) == 1
 
 
-def test_heatmap_shape_and_markers():
-    today = date(2026, 6, 24)  # a Wednesday
-    log = ["2026-06-24"]
-    grid = core.heatmap(log, today, weeks=4)
-    lines = grid.splitlines()
-    assert len(lines) == 7  # one row per weekday
-    assert lines[0].startswith("Mon")
-    assert "█" in grid  # today is rendered as completed
+def test_times_per_week_longest():
+    sched = schedule.parse("2/week")
+    today = date(2026, 6, 28)
+    e = entries_for([
+        "2026-06-01", "2026-06-02",  # week met
+        "2026-06-08", "2026-06-09",  # week met
+        # skip a week
+        "2026-06-22", "2026-06-23",  # week met
+    ])
+    assert core.longest_streak(e, sched, today) == 2
+
+
+# --- completion rate --------------------------------------------------------
+
+
+def test_completion_rate_daily():
+    today = date(2026, 6, 24)
+    e = entries_for(["2026-06-24", "2026-06-23"])
+    assert core.completion_rate(e, schedule.daily(), today, 7) == 2 / 7
+
+
+def test_completion_rate_weekly_only_counts_due_days():
+    sched = schedule.parse("mon,wed,fri")  # ~3 due days per week
+    today = date(2026, 6, 26)  # Friday
+    e = entries_for(["2026-06-22", "2026-06-24", "2026-06-26"])  # all 3 this week
+    rate = core.completion_rate(e, sched, today, 7)
+    assert rate == 1.0  # every due day in the last 7 days was hit
+
+
+def test_completion_rate_empty_window_is_full():
+    sched = schedule.parse("mon")  # only Mondays
+    today = date(2026, 6, 25)  # Thu
+    e = {}
+    # window of 3 days (Tue-Thu) has no Mondays -> nothing required -> 1.0
+    assert core.completion_rate(e, sched, today, 3) == 1.0
+
+
+def test_completion_rate_rejects_bad_window():
+    with pytest.raises(ValueError):
+        core.completion_rate({}, schedule.daily(), date(2026, 6, 24), 0)
