@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Pass a referral — {{ chapter_name }}{% endblock %}
+{% block content %}
+<h1>Pass a referral</h1>
+<form method="post" action="/referrals/new" class="card form-card">
+  <label>To member
+    <select name="receiver_id" required>
+      <option value="" disabled selected>Choose a member…</option>
+      {% for m in others %}
+      <option value="{{ m.id }}">{{ m.name }}{% if m.business_name %} — {{ m.business_name }}{% endif %}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Contact name
+    <input type="text" name="contact_name" required placeholder="Who are you referring?">
+  </label>
+  <label>Contact details
+    <input type="text" name="contact_info" placeholder="Phone or email (optional)">
+  </label>
+  <div class="field-row">
+    <label>Type
+      <select name="referral_type">
+        <option value="outside">Outside</option>
+        <option value="inside">Inside</option>
+      </select>
+    </label>
+    <label>Temperature
+      <select name="temperature">
+        <option value="hot">Hot</option>
+        <option value="warm" selected>Warm</option>
+        <option value="cold">Cold</option>
+      </select>
+    </label>
+    <label>Date
+      <input type="date" name="referral_date" value="{{ today }}">
+    </label>
+  </div>
+  <label>Notes
+    <textarea name="notes" rows="3" placeholder="Context for the receiving member"></textarea>
+  </label>
+  <button type="submit" class="btn btn-primary btn-block">Pass referral</button>
+</form>
+{% endblock %}

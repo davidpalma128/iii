@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Referrals — {{ chapter_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Referrals</h1>
+  <a class="btn btn-primary" href="/referrals/new">+ Pass a referral</a>
+</div>
+
+<div class="tab-row">
+  <a href="/referrals?tab=given{% if status %}&status={{ status }}{% endif %}"
+     class="tab-link {% if tab == 'given' %}active{% endif %}">Given</a>
+  <a href="/referrals?tab=received{% if status %}&status={{ status }}{% endif %}"
+     class="tab-link {% if tab == 'received' %}active{% endif %}">Received</a>
+  <form method="get" action="/referrals" class="filter-bar">
+    <input type="hidden" name="tab" value="{{ tab }}">
+    <select name="status" data-autosubmit>
+      <option value="">All statuses</option>
+      {% for s in statuses %}
+      <option value="{{ s }}" {% if s == status %}selected{% endif %}>{{ status_labels[s] }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+{% if referrals %}
+<ul class="item-list">
+  {% for r in referrals %}
+  <li>
+    <a class="card item-card" href="/referrals/{{ r.id }}">
+      <div class="item-top">
+        <strong>{{ r.contact_name }}</strong>
+        <span class="badge status-{{ r.status }}">{{ status_labels[r.status] }}</span>
+      </div>
+      <div class="muted">
+        {% if tab == 'given' %}To {{ r.receiver_name }}{% else %}From {{ r.giver_name }}{% endif %}
+        · {{ r.referral_type }} · {{ r.temperature }} · {{ r.referral_date | datefmt }}
+      </div>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">No referrals here yet.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ chapter_name }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/">{{ chapter_name }}</a>
+    {% if current_member %}
+    <div class="user-menu">
+      <a href="/profile" class="user-name">{{ current_member.name }}</a>
+      <form method="post" action="/logout">
+        <button type="submit" class="btn btn-ghost btn-sm">Log out</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+  {% if current_member %}
+  {% set path = request.url.path %}
+  <nav class="tabs" aria-label="Main navigation">
+    <a href="/" {% if path == '/' %}class="active"{% endif %}>Dashboard</a>
+    <a href="/referrals" {% if path.startswith('/referrals') %}class="active"{% endif %}>Referrals</a>
+    <a href="/one-to-ones" {% if path.startswith('/one-to-ones') %}class="active"{% endif %}>1-to-1s</a>
+    <a href="/tyfcb" {% if path.startswith('/tyfcb') %}class="active"{% endif %}>TYFCB</a>
+    <a href="/members" {% if path.startswith('/members') %}class="active"{% endif %}>Members</a>
+    <a href="/leaderboard" {% if path.startswith('/leaderboard') %}class="active"{% endif %}>Leaderboard</a>
+    {% if current_member.is_admin %}
+    <a href="/admin/members" {% if path.startswith('/admin') %}class="active"{% endif %}>Admin</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+</header>
+<main class="container">
+  {% include "_flash.html" %}
+  {% block content %}{% endblock %}
+</main>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

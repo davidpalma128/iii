@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard — {{ chapter_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Leaderboard</h1>
+  <form method="get" action="/leaderboard" class="filter-bar">
+    <select name="metric" data-autosubmit>
+      {% for key, label in metrics.items() %}
+      <option value="{{ key }}" {% if key == metric %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select name="period" data-autosubmit>
+      {% for p in periods %}
+      <option value="{{ p }}" {% if p == period %}selected{% endif %}>
+        {{ {'week': 'This week', 'month': 'This month', 'all': 'All time'}[p] }}
+      </option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<table class="table leaderboard">
+  <thead>
+    <tr><th>#</th><th>Member</th><th class="num">{{ metrics[metric] }}</th></tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr class="{% if loop.index <= 3 and row[metric] > 0 %}top-three{% endif %}">
+      <td class="rank">{{ loop.index }}</td>
+      <td>
+        <a href="/members/{{ row.id }}">{{ row.name }}</a>
+        {% if row.business_name %}<span class="muted"> · {{ row.business_name }}</span>{% endif %}
+      </td>
+      <td class="num">
+        {% if metric.startswith('tyfcb') %}{{ row[metric] | money }}{% else %}{{ row[metric] }}{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

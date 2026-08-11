@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Record TYFCB — {{ chapter_name }}{% endblock %}
+{% block content %}
+<h1>Record closed business</h1>
+<p class="muted">Thank the member whose referral turned into revenue for you.</p>
+<form method="post" action="/tyfcb/new" class="card form-card">
+  <label>Thank
+    <select name="thanked_id" required>
+      <option value="" disabled selected>Choose a member…</option>
+      {% for m in others %}
+      <option value="{{ m.id }}">{{ m.name }}{% if m.business_name %} — {{ m.business_name }}{% endif %}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <div class="field-row">
+    <label>Amount
+      <input type="text" name="amount" inputmode="decimal" required placeholder="$1,250.00">
+    </label>
+    <label>Date
+      <input type="date" name="tyfcb_date" value="{{ today }}">
+    </label>
+  </div>
+  <label>Business type
+    <select name="is_new_business">
+      <option value="1">New business</option>
+      <option value="0">Repeat business</option>
+    </select>
+  </label>
+  {% if received_referrals %}
+  <label>Link to a referral you received (optional)
+    <select name="referral_id">
+      <option value="">No linked referral</option>
+      {% for r in received_referrals %}
+      <option value="{{ r.id }}">{{ r.contact_name }} — from {{ r.giver_name }} ({{ r.referral_date | datefmt }})</option>
+      {% endfor %}
+    </select>
+  </label>
+  {% endif %}
+  <label>Notes
+    <textarea name="notes" rows="2"></textarea>
+  </label>
+  <button type="submit" class="btn btn-primary btn-block">Record TYFCB</button>
+</form>
+{% endblock %}

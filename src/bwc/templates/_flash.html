@@ -1,0 +1,6 @@
+{% if flash %}
+<div class="flash flash-{{ flash.category }}" role="status">{{ flash.message }}</div>
+{% endif %}
+{% if error %}
+<div class="flash flash-error" role="alert">{{ error }}</div>
+{% endif %}

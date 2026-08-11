@@ -16,3 +16,6 @@ venv/
 .DS_Store
 .idea/
 .vscode/
+
+# BWC app local data (SQLite DB, dev secret key)
+data/

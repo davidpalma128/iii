@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Log in — {{ chapter_name }}{% endblock %}
+{% block content %}
+<div class="auth-card card">
+  <h1>{{ chapter_name }}</h1>
+  <p class="muted">Member login</p>
+  <form method="post" action="/login">
+    <input type="hidden" name="next" value="{{ next or '/' }}">
+    <label>Email
+      <input type="email" name="email" required autocomplete="email" autofocus>
+    </label>
+    <label>Password
+      <input type="password" name="password" required autocomplete="current-password">
+    </label>
+    <button type="submit" class="btn btn-primary btn-block">Log in</button>
+  </form>
+</div>
+{% endblock %}
