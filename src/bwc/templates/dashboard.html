@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ chapter_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Chapter dashboard</h1>
+  <form method="get" action="/" class="filter-bar">
+    <select name="period" data-autosubmit>
+      {% for p in periods %}
+      <option value="{{ p }}" {% if p == period %}selected{% endif %}>
+        {{ {'week': 'This week', 'month': 'This month', 'all': 'All time'}[p] }}
+      </option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{ totals.refs_given }}</div>
+    <div class="stat-label">Referrals passed</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ totals.one_to_ones }}</div>
+    <div class="stat-label">One-to-ones</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ totals.tyfcb | money }}</div>
+    <div class="stat-label">TYFCB</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ totals.members }}</div>
+    <div class="stat-label">Active members</div>
+  </div>
+</div>
+
+{% if mine %}
+<h2>Your numbers</h2>
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{ mine.refs_given }}</div>
+    <div class="stat-label">Referrals given</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ mine.refs_received }}</div>
+    <div class="stat-label">Referrals received</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ mine.one_to_ones }}</div>
+    <div class="stat-label">One-to-ones</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ mine.tyfcb_received | money }}</div>
+    <div class="stat-label">TYFCB received</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="quick-actions">
+  <a class="btn btn-primary" href="/referrals/new">+ Pass a referral</a>
+  <a class="btn" href="/one-to-ones/new">+ Log a 1-to-1</a>
+  <a class="btn" href="/tyfcb/new">+ Record TYFCB</a>
+</div>
+
+<h2>Recent activity</h2>
+{% if activity %}
+<ul class="activity-feed">
+  {% for item in activity %}
+  <li>
+    {% if item.kind == 'referral' %}
+    <span class="badge badge-referral">Referral</span>
+    {{ item.who }} → {{ item.whom }} <span class="muted">({{ item.detail }})</span>
+    {% elif item.kind == 'one_to_one' %}
+    <span class="badge badge-o2o">1-to-1</span>
+    {{ item.who }} &amp; {{ item.whom }}{% if item.detail %} <span class="muted">at {{ item.detail }}</span>{% endif %}
+    {% else %}
+    <span class="badge badge-tyfcb">TYFCB</span>
+    {{ item.who }} thanked {{ item.whom }} for <strong>{{ item.amount_cents | money }}</strong>
+    {% endif %}
+    <span class="muted timestamp">{{ item.created_at | datefmt }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">No activity yet — pass the first referral!</p>
+{% endif %}
+{% endblock %}

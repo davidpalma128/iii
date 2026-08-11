@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ member.name }} — {{ chapter_name }}{% endblock %}
+{% block content %}
+<div class="card profile-card">
+  <h1>{{ member.name }}</h1>
+  {% if member.business_name %}<p class="profile-business">{{ member.business_name }}</p>{% endif %}
+  {% if member.category %}<span class="badge">{{ member.category }}</span>{% endif %}
+
+  <dl class="contact-list">
+    <div><dt>Email</dt><dd><a href="mailto:{{ member.email }}">{{ member.email }}</a></dd></div>
+    {% if member.phone %}
+    <div><dt>Phone</dt><dd><a href="tel:{{ member.phone }}">{{ member.phone }}</a></dd></div>
+    {% endif %}
+  </dl>
+
+  {% if member.scheduling_url %}
+  <a class="btn btn-primary btn-block" href="{{ member.scheduling_url }}"
+     target="_blank" rel="noopener">Book a 1-to-1 with {{ member.name.split(' ')[0] }}</a>
+  {% else %}
+  <p class="muted">No scheduling link yet.</p>
+  {% endif %}
+
+  {% if current_member.id == member.id %}
+  <p><a class="btn btn-ghost" href="/profile">Edit your profile</a></p>
+  {% endif %}
+</div>
+
+{% if stats %}
+<h2>All-time numbers</h2>
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.refs_given }}</div>
+    <div class="stat-label">Referrals given</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.refs_received }}</div>
+    <div class="stat-label">Referrals received</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.one_to_ones }}</div>
+    <div class="stat-label">One-to-ones</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.tyfcb_received | money }}</div>
+    <div class="stat-label">TYFCB received</div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

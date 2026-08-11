@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Referral: {{ referral.contact_name }} — {{ chapter_name }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="item-top">
+    <h1>{{ referral.contact_name }}</h1>
+    <span class="badge status-{{ referral.status }}">{{ status_labels[referral.status] }}</span>
+  </div>
+  <dl class="contact-list">
+    <div><dt>From</dt><dd>{{ referral.giver_name }}</dd></div>
+    <div><dt>To</dt><dd>{{ referral.receiver_name }}</dd></div>
+    {% if referral.contact_info %}
+    <div><dt>Contact</dt><dd>{{ referral.contact_info }}</dd></div>
+    {% endif %}
+    <div><dt>Type</dt><dd>{{ referral.referral_type }} · {{ referral.temperature }}</dd></div>
+    <div><dt>Date</dt><dd>{{ referral.referral_date | datefmt }}</dd></div>
+    {% if referral.notes %}
+    <div><dt>Notes</dt><dd>{{ referral.notes }}</dd></div>
+    {% endif %}
+  </dl>
+</div>
+
+<h2>Updates</h2>
+{% if updates %}
+<ul class="thread">
+  {% for u in updates %}
+  <li class="card thread-item">
+    <div class="thread-head">
+      <strong>{{ u.author_name }}</strong>
+      <span class="muted">{{ u.created_at | datefmt }}</span>
+    </div>
+    {% if u.new_status %}
+    <div>Status changed to
+      <span class="badge status-{{ u.new_status }}">{{ status_labels[u.new_status] }}</span>
+    </div>
+    {% endif %}
+    {% if u.note %}<p>{{ u.note }}</p>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">No updates yet.</p>
+{% endif %}
+
+<form method="post" action="/referrals/{{ referral.id }}/updates" class="card form-card">
+  <h3>Add an update</h3>
+  <label>Note
+    <textarea name="note" rows="2" placeholder="What happened?"></textarea>
+  </label>
+  <label>Change status
+    <select name="new_status">
+      <option value="">Keep as {{ status_labels[referral.status] }}</option>
+      {% for s in statuses if s != referral.status %}
+      <option value="{{ s }}">{{ status_labels[s] }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <button type="submit" class="btn btn-primary">Post update</button>
+</form>
+
+{% if current_member.is_admin or current_member.id == referral.giver_id %}
+<form method="post" action="/referrals/{{ referral.id }}/delete"
+      data-confirm="Delete this referral and its updates?">
+  <button type="submit" class="btn btn-danger btn-ghost">Delete referral</button>
+</form>
+{% endif %}
+{% endblock %}

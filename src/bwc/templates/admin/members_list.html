@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Manage members — {{ chapter_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Manage members</h1>
+  <a class="btn btn-primary" href="/admin/members/new">+ Add member</a>
+</div>
+
+<table class="table stack-sm">
+  <thead>
+    <tr><th>Name</th><th>Email</th><th>Status</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for m in members %}
+    <tr class="{% if not m.is_active %}inactive-row{% endif %}">
+      <td data-label="Name">
+        {{ m.name }}
+        {% if m.is_admin %}<span class="badge badge-admin">admin</span>{% endif %}
+      </td>
+      <td data-label="Email">{{ m.email }}</td>
+      <td data-label="Status">{{ 'Active' if m.is_active else 'Inactive' }}</td>
+      <td data-label="Actions" class="actions">
+        <a class="btn btn-sm" href="/admin/members/{{ m.id }}/edit">Edit</a>
+        {% if m.is_active %}
+        <form method="post" action="/admin/members/{{ m.id }}/deactivate"
+              data-confirm="Deactivate {{ m.name }}?">
+          <button type="submit" class="btn btn-sm btn-danger">Deactivate</button>
+        </form>
+        {% else %}
+        <form method="post" action="/admin/members/{{ m.id }}/activate">
+          <button type="submit" class="btn btn-sm">Reactivate</button>
+        </form>
+        {% endif %}
+        <details class="reset-pw">
+          <summary class="btn btn-sm btn-ghost">Reset password</summary>
+          <form method="post" action="/admin/members/{{ m.id }}/reset-password">
+            <input type="password" name="password" minlength="8" required
+                   placeholder="New temporary password">
+            <button type="submit" class="btn btn-sm">Set</button>
+          </form>
+        </details>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

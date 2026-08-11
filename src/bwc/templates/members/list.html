@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Members — {{ chapter_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Members</h1>
+  <form method="get" action="/members" class="filter-bar">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search name, business, category">
+    <button type="submit" class="btn btn-sm">Search</button>
+  </form>
+</div>
+
+<div class="member-grid">
+  {% for m in members %}
+  <a class="card member-card" href="/members/{{ m.id }}">
+    <div class="member-name">{{ m.name }}</div>
+    {% if m.business_name %}<div class="member-business">{{ m.business_name }}</div>{% endif %}
+    {% if m.category %}<div class="member-category badge">{{ m.category }}</div>{% endif %}
+  </a>
+  {% else %}
+  <p class="muted">No members match.</p>
+  {% endfor %}
+</div>
+{% endblock %}

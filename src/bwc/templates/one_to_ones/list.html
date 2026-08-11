@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}One-to-ones — {{ chapter_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>One-to-ones</h1>
+  <a class="btn btn-primary" href="/one-to-ones/new">+ Log a 1-to-1</a>
+</div>
+
+<div class="tab-row">
+  <a href="/one-to-ones?scope=mine" class="tab-link {% if scope == 'mine' %}active{% endif %}">Mine</a>
+  <a href="/one-to-ones?scope=all" class="tab-link {% if scope == 'all' %}active{% endif %}">Whole chapter</a>
+</div>
+
+{% if one_to_ones %}
+<ul class="item-list">
+  {% for o in one_to_ones %}
+  <li class="card item-card">
+    <div class="item-top">
+      <strong>{{ o.member1_name }} &amp; {{ o.member2_name }}</strong>
+      <span class="muted">{{ o.met_on | datefmt }}</span>
+    </div>
+    {% if o.location %}<div class="muted">{{ o.location }}</div>{% endif %}
+    {% if o.notes %}<div>{{ o.notes }}</div>{% endif %}
+    {% if current_member.is_admin or current_member.id in (o.member1_id, o.member2_id) %}
+    <form method="post" action="/one-to-ones/{{ o.id }}/delete"
+          data-confirm="Delete this one-to-one?">
+      <button type="submit" class="btn btn-sm btn-ghost btn-danger">Delete</button>
+    </form>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">No one-to-ones logged yet.
+  Tip: members' profiles have a booking link.</p>
+{% endif %}
+{% endblock %}

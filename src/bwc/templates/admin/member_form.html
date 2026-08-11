@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if member else 'Add' }} member — {{ chapter_name }}{% endblock %}
+{% block content %}
+<h1>{{ 'Edit ' + member.name if member else 'Add member' }}</h1>
+<form method="post"
+      action="{{ '/admin/members/' + (member.id | string) + '/edit' if member else '/admin/members/new' }}"
+      class="card form-card">
+  <label>Name
+    <input type="text" name="name" value="{{ member.name if member else '' }}" required>
+  </label>
+  <label>Email
+    <input type="email" name="email" value="{{ member.email if member else '' }}" required>
+  </label>
+  {% if not member %}
+  <label>Temporary password
+    <input type="password" name="password" minlength="8" required>
+    <small class="muted">Share it with the member; they can change it after logging in.</small>
+  </label>
+  {% endif %}
+  <label>Business name
+    <input type="text" name="business_name" value="{{ member.business_name if member else '' }}">
+  </label>
+  <label>Category / industry
+    <input type="text" name="category" value="{{ member.category if member else '' }}">
+  </label>
+  <label>Phone
+    <input type="tel" name="phone" value="{{ member.phone if member else '' }}">
+  </label>
+  {% if member %}
+  <label>Scheduling link
+    <input type="url" name="scheduling_url" value="{{ member.scheduling_url }}">
+  </label>
+  {% endif %}
+  <label class="checkbox-label">
+    <input type="checkbox" name="is_admin" value="1"
+           {% if member and member.is_admin %}checked{% endif %}>
+    Chapter admin
+  </label>
+  <button type="submit" class="btn btn-primary btn-block">
+    {{ 'Save changes' if member else 'Create member' }}
+  </button>
+</form>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Edit profile — {{ chapter_name }}{% endblock %}
+{% block content %}
+<h1>Edit your profile</h1>
+<form method="post" action="/profile" class="card form-card">
+  <label>Name
+    <input type="text" name="name" value="{{ member.name }}" required>
+  </label>
+  <label>Business name
+    <input type="text" name="business_name" value="{{ member.business_name }}">
+  </label>
+  <label>Category / industry
+    <input type="text" name="category" value="{{ member.category }}"
+           placeholder="e.g. Financial Advisor">
+  </label>
+  <label>Phone
+    <input type="tel" name="phone" value="{{ member.phone }}">
+  </label>
+  <label>Scheduling link
+    <input type="url" name="scheduling_url" value="{{ member.scheduling_url }}"
+           placeholder="https://calendly.com/you">
+    <small class="muted">Shown on your profile so members can book a 1-to-1 with you.</small>
+  </label>
+  <button type="submit" class="btn btn-primary btn-block">Save profile</button>
+</form>
+<p><a class="btn btn-ghost" href="/password">Change password</a></p>
+{% endblock %}

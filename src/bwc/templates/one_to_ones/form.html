@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Log a one-to-one — {{ chapter_name }}{% endblock %}
+{% block content %}
+<h1>Log a one-to-one</h1>
+<form method="post" action="/one-to-ones/new" class="card form-card">
+  <label>Met with
+    <select name="other_id" required>
+      <option value="" disabled selected>Choose a member…</option>
+      {% for m in others %}
+      <option value="{{ m.id }}">{{ m.name }}{% if m.business_name %} — {{ m.business_name }}{% endif %}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <div class="field-row">
+    <label>Date
+      <input type="date" name="met_on" value="{{ today }}">
+    </label>
+    <label>Location
+      <input type="text" name="location" placeholder="Coffee shop, Zoom…">
+    </label>
+  </div>
+  <label>Notes
+    <textarea name="notes" rows="3" placeholder="What did you cover?"></textarea>
+  </label>
+  <button type="submit" class="btn btn-primary btn-block">Log one-to-one</button>
+</form>
+{% endblock %}

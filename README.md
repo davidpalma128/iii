@@ -1,4 +1,46 @@
-# habits
+# iii
+
+This repo contains two apps:
+
+- **[`habits`](#habits)** — a local-first terminal habit tracker (`src/habits/`)
+- **[`bwc`](#bwc--the-business-wealth-collective)** — a mobile-friendly web app for
+  tracking a BNI-style networking chapter (`src/bwc/`)
+
+## bwc — The Business Wealth Collective
+
+A chapter tracker for a single networking group: referrals with a status
+lifecycle and update thread, one-to-one meetings, TYFCB (Thank You For Closed
+Business) dollars, a member directory with per-member scheduling links, and a
+chapter dashboard with a leaderboard.
+
+Built with FastAPI + Jinja2 + SQLite, server-rendered and mobile-first — members
+open it on their phones at the weekly meeting.
+
+### Running
+
+```bash
+pip install -e ".[dev]"
+bwc init-db
+bwc create-admin --email you@example.com --name "Your Name"   # prompts for password
+bwc serve                       # or: uvicorn bwc.asgi:app --reload
+```
+
+Then log in at http://127.0.0.1:8000. The admin adds members (with temporary
+passwords) from the **Admin** tab; there is no self-signup since it's a closed
+group. Members edit their own profile — including their scheduling link (e.g.
+Calendly), which shows as a "Book a 1-to-1" button on their profile.
+
+### Configuration
+
+| Env var | Meaning | Default |
+| --- | --- | --- |
+| `BWC_DB` | SQLite database path | `data/bwc.sqlite3` |
+| `BWC_SECRET_KEY` | Cookie-signing secret (set this in production) | generated into `data/.secret_key` |
+| `BWC_COOKIE_SECURE` | Set `1` when serving over HTTPS | off |
+
+Data lives in a single SQLite file — back it up by copying `data/bwc.sqlite3`.
+
+## habits
 
 A fast, local-first habit tracker for your terminal. No accounts, no cloud, no
 dependencies — just a single command and a plain-JSON file you fully own.
